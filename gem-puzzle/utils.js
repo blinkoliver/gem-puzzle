@@ -52,16 +52,32 @@ export let createHtmlElement = (
   return element;
 };
 
-export let shuffle = (a) => {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
-
 export let getFromLocalStorage = (key) => localStorage.getItem(`${key}`);
 
 export let setToLocalStorage = (key, value) => {
   localStorage.setItem(`${key}`, value);
+};
+
+export let getCorrectArray = (size) => {
+  let numbers = [].fill("");
+  numbers[size ** 2 - 1] = "";
+  numbers.fill("");
+  numbers = numbers.map((el, ind) => ind);
+
+  let shuffle = (array, repeat) => {
+    for (let i = 0; i <= repeat; i += 1) {
+      array.sort(() => Math.random() - 0.5);
+    }
+  };
+  shuffle(numbers, size ** 2);
+
+  const field = [];
+  for (let i = 0; i < size; i += 1) {
+    field[i] = [];
+    for (let j = 0; j < size; j += 1) {
+      field[i][j] = numbers.pop();
+    }
+  }
+
+  return field.flat();
 };

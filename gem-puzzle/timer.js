@@ -1,33 +1,12 @@
 import { createHtmlElement } from "./utils.js";
 
-let createTimer = () => {
+let startTimer = () => {
   let minutes = "00";
   let seconds = "00";
-  let appendMinutes = createHtmlElement(
-    "span",
-    "minutes",
-    minutes,
-    document.querySelector(".timer")
-  );
-  createHtmlElement("span", "colon", ":", document.querySelector(".timer"));
-  let appendSeconds = createHtmlElement(
-    "span",
-    "seconds",
-    seconds,
-    document.querySelector(".timer")
-  );
-  let Interval;
+  let appendMinutes = document.querySelector(".minutes");
+  let appendSeconds = document.querySelector(".seconds");
 
-  document.querySelector(".start").onclick = () => {
-    clearInterval(Interval);
-    Interval = setInterval(startTimer, 1000);
-  };
-
-  document.querySelector(".stop").onclick = () => {
-    clearInterval(Interval);
-  };
-
-  let startTimer = () => {
+  setInterval(() => {
     seconds++;
     if (seconds <= 9) {
       appendSeconds.innerHTML = "0" + seconds;
@@ -47,6 +26,7 @@ let createTimer = () => {
         appendSeconds.innerHTML = "0" + 0;
       }
     }
-  };
+  }, 1000);
 };
-export default createTimer;
+
+export default startTimer;

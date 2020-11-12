@@ -1,19 +1,16 @@
 import {
   createHtmlElement,
-  shuffle,
+  getCorrectArray,
   getFromLocalStorage,
   setToLocalStorage,
 } from "./utils.js";
-import createTimer from "./timer.js";
-import CreateTimer from "./CreateTimer.js"
+import startTimer from "./timer.js";
 import createPuzzle from "./puzzle.js";
 
 let game = (size) => {
-  let numberOfPuzzles = size * size;
   let puzzleSize = "";
-  let randomArr = shuffle(
-    Array.from({ length: numberOfPuzzles }, (_, i) => i + 1)
-  );
+  let randomArr = getCorrectArray(size);
+  let moves = 0;
 
   let initBody = () => {
     let header = createHtmlElement("header", "header");
@@ -22,12 +19,10 @@ let game = (size) => {
     document.body.append(header, main, footer);
     return { header, footer };
   };
-
+  //RENDER Field
   let initField = () => {
-    let empty = {
-      top: 0,
-      left: 0,
-    };
+    let puzzles = [];
+    let empty = {};
     let field = createHtmlElement("div", "field");
     document.querySelector(".main").append(field);
     document.querySelector(".field").style.width = "70%";
@@ -39,25 +34,40 @@ let game = (size) => {
     document.querySelector(".field").style.height = `${fieldWidth}px`;
     puzzleSize = fieldWidth / size;
 
-    const puzzles = [];
-    puzzles.push(empty);
+    //RENDER Puzzles
 
-    for (let i = 1; i <= randomArr.length - 1; i++) {
+    for (let i = 0; i <= randomArr.length - 1; i++) {
       let left = i % size;
       let top = (i - left) / size;
+      let value = randomArr[i];
 
-      const puzzle = createPuzzle(puzzleSize, top, left, i);
+      if (value === 0) {
+        empty = {
+          left: left,
+          top: top,
+          element: null,
+          value: 0,
+        };
+      }
+      const puzzle = createPuzzle(puzzleSize, top, left, value);
+
       field.appendChild(puzzle);
-
       puzzles.push({
         left: left,
         top: top,
         element: puzzle,
+        value: value,
       });
 
+      //click move puzles
       let movePuzzle = (index) => {
-    CreateTimer().startTimer();
         const puzzle = puzzles[index];
+        const leftDiff = Math.abs(empty.left - puzzle.left);
+        const topDiff = Math.abs(empty.top - puzzle.top);
+        if (leftDiff + topDiff > 1) {
+          return;
+        }
+        puzzle.element.style.transition = "0.2s";
         puzzle.element.style.top = `${empty.top * puzzleSize}px`;
         puzzle.element.style.left = `${empty.left * puzzleSize}px`;
 
@@ -69,9 +79,52 @@ let game = (size) => {
 
         puzzle.left = emptyLeft;
         puzzle.top = emptyTop;
+
+        let puzzlesWithoutEmpty = puzzles.filter((element) => {
+          return element.value !== 0;
+        });
+        let isWin = puzzlesWithoutEmpty.every((element) => {
+          return element.value === element.top * size + element.left + 1;
+        });
+
+        isWin ? console.log(isWin) : (moves += 1);
+        moves === 1 ? startTimer() : null;
+        document.querySelector(".moves").innerHTML = `moves: ${moves}`;
       };
 
       puzzle.addEventListener("click", () => movePuzzle(i));
+
+      //drag&drop move puzzles
+      let dragMove = (index, event) => {
+        const puzzle = puzzles[index];
+        const leftDiff = Math.abs(empty.left - puzzle.left);
+        const topDiff = Math.abs(empty.top - puzzle.top);
+        puzzle.element.ondragstart = () => false;
+
+        if (leftDiff + topDiff > 1) {
+          return;
+        }
+        puzzle.element.style.position = "absolute";
+        puzzle.element.style.zIndex = 1000;
+
+        let moveAt = (pageX, pageY) => {
+          puzzle.element.style.left = pageX - puzzle.element.offsetWidth + "px";
+          puzzle.element.style.top = pageY - puzzle.element.offsetHeight + "px";
+        };
+        moveAt(event.pageX, event.pageY);
+
+        let onMouseMove = (event) => {
+          moveAt(event.pageX, event.pageY);
+        };
+        document.addEventListener("mousemove", onMouseMove);
+
+        puzzle.element.onmouseup = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          puzzle.element.onmouseup = null;
+        };
+      };
+
+      puzzle.addEventListener("mousedown", (event) => dragMove(i, event));
     }
   };
 
@@ -111,10 +164,36 @@ let game = (size) => {
       reInitGame(getFromLocalStorage("size"));
     });
     //init timer
-    let timerElement = createHtmlElement(
+    createHtmlElement(
       "div",
       "timer",
-      null,
+      [
+        createHtmlElement(
+          "span",
+          "minutes",
+          "00",
+          document.querySelector(".timer")
+        ),
+        createHtmlElement(
+          "span",
+          "colon",
+          ":",
+          document.querySelector(".timer")
+        ),
+        createHtmlElement(
+          "span",
+          "seconds",
+          "00",
+          document.querySelector(".timer")
+        ),
+      ],
+      document.querySelector(".header")
+    );
+    //init moves
+    createHtmlElement(
+      "span",
+      "moves",
+      `moves: ${moves}`,
       document.querySelector(".header")
     );
     //init new game arrow
@@ -160,6 +239,7 @@ let game = (size) => {
     );
   };
 
+    
   let reInitGame = (size) => {
     deleteGame();
     game(size);
@@ -169,6 +249,8 @@ let game = (size) => {
     document.querySelector(".main").remove();
     document.querySelector(".footer").remove();
   };
+
+  let saveGame = () => {};
 
   (function () {
     window.addEventListener("resize", resizeThrottler, false);
@@ -190,7 +272,6 @@ let game = (size) => {
   initBody();
   initField();
   initHelpElements(size);
-  new CreateTimer();
 };
 
 export default game;
