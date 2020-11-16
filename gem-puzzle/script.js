@@ -6,4 +6,9 @@ if (!getFromLocalStorage("size")) {
 }
 let size = getFromLocalStorage("size");
 
-game(size);
+if (!getFromLocalStorage("savedGameArr")) {
+  setToLocalStorage("savedGameArr", "");
+}
+let savedGameArr = getFromLocalStorage("savedGameArr").split(",").map((element) => parseInt(element));
+
+game(size, savedGameArr);
