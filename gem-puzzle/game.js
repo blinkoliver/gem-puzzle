@@ -174,7 +174,11 @@ let game = (size, savedGameArr) => {
       //     puzzle.element.onmouseup = null;
       //   };
       // };
-      // puzzle.addEventListener("mousedown", (event) => dragMove(i, event));
+
+      // puzzle.addEventListener("mousedown", (event) => {
+      //   dragMove(i, event)
+      // });
+
     }
 
     document.querySelector(".field").addEventListener(

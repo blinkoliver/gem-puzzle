@@ -68,8 +68,10 @@ export const isSolvable = (arr) => {
       if (arr[i] && arr[j] && arr[i] > arr[j]) number_of_inv++;
     }
   }
+  console.log(number_of_inv);
   return number_of_inv % 2 == 0;
 };
+
 export const shuffle = (arr) => {
   const copy = [...arr];
   // loop over the array
@@ -101,14 +103,11 @@ export const createArr = (size) => {
 export let getCorrectArray = (size) => {
   let linearArr = createArr(size);
   let shuffleArr = shuffle(linearArr.flat());
-  if (size === 4) {
-    while (isSolvable(shuffleArr)) {
-      shuffleArr = shuffle(linearArr.flat());
-    }
-  }
+
   while (!isSolvable(shuffleArr)) {
     shuffleArr = shuffle(linearArr.flat());
   }
+
   return shuffleArr;
 };
 
