@@ -3,27 +3,15 @@ import {
   getCorrectArray,
   getFromLocalStorage,
   setToLocalStorage,
-  sortForSave,
-  showModal,
-  isSolvable,
 } from "./utils.js";
 import startTimer from "./timer.js";
 import createPuzzle from "./puzzle.js";
 
-let game = (size, savedGameArr) => {
+let game = (size) => {
   let puzzleSize = "";
-  let randomArr = [];
-  let moves;
-  let audio = new Audio("./assets/move.mp3");
-  let isAudio = false;
+  let randomArr = getCorrectArray(size);
+  let moves = 0;
 
-  if (savedGameArr.length === 1) {
-    randomArr = getCorrectArray(size);
-    moves = 0;
-  } else {
-    randomArr = savedGameArr;
-    moves = parseInt(getFromLocalStorage("moves"));
-  }
   let initBody = () => {
     let header = createHtmlElement("header", "header");
     let main = createHtmlElement("main", "main");
@@ -92,12 +80,6 @@ let game = (size, savedGameArr) => {
         puzzle.left = emptyLeft;
         puzzle.top = emptyTop;
 
-        //audio
-        if (isAudio) {
-          audio.play();
-        }
-        //win
-
         let puzzlesWithoutEmpty = puzzles.filter((element) => {
           return element.value !== 0;
         });
@@ -105,88 +87,45 @@ let game = (size, savedGameArr) => {
           return element.value === element.top * size + element.left + 1;
         });
 
-        if (isWin) {
-          while (document.querySelector(".modal").firstChild) {
-            document
-              .querySelector(".modal")
-              .removeChild(document.querySelector(".modal").firstChild);
-          }
-          showModal(
-            createHtmlElement(
-              "div",
-              "modal-content",
-              `Ура! Вы решили головоломку за ${
-                document.querySelector(".minutes").innerHTML
-              }:${
-                document.querySelector(".seconds").innerHTML
-              } и ${moves} ходов`
-            )
-          );
-        } else {
-          moves += 1;
-        }
-
-        //save moves, times, puzzles
-
-        setToLocalStorage(
-          "minutes",
-          document.querySelector(".minutes").innerHTML
-        );
-        setToLocalStorage(
-          "seconds",
-          document.querySelector(".seconds").innerHTML
-        );
-
+        isWin ? console.log(isWin) : (moves += 1);
+        moves === 1 ? startTimer() : null;
         document.querySelector(".moves").innerHTML = `moves: ${moves}`;
-        setToLocalStorage("savedGameArr", sortForSave(puzzles, size, empty));
-        setToLocalStorage("moves", moves);
       };
 
       puzzle.addEventListener("click", () => movePuzzle(i));
 
-      // drag&drop move puzzles
-      // let dragMove = (index, event) => {
-      //   const puzzle = puzzles[index];
-      //   const leftDiff = Math.abs(empty.left - puzzle.left);
-      //   const topDiff = Math.abs(empty.top - puzzle.top);
-      //   puzzle.element.ondragstart = () => false;
+      //drag&drop move puzzles
+      let dragMove = (index, event) => {
+        const puzzle = puzzles[index];
+        const leftDiff = Math.abs(empty.left - puzzle.left);
+        const topDiff = Math.abs(empty.top - puzzle.top);
+        puzzle.element.ondragstart = () => false;
 
-      //   if (leftDiff + topDiff > 1) {
-      //     return;
-      //   }
+        if (leftDiff + topDiff > 1) {
+          return;
+        }
+        puzzle.element.style.position = "absolute";
+        puzzle.element.style.zIndex = 1000;
 
-      //   puzzle.element.style.position = "absolute";
-      //   puzzle.element.style.zIndex = 2;
+        let moveAt = (pageX, pageY) => {
+          puzzle.element.style.left = pageX - puzzle.element.offsetWidth + "px";
+          puzzle.element.style.top = pageY - puzzle.element.offsetHeight + "px";
+        };
+        moveAt(event.pageX, event.pageY);
 
-      //   let moveAt = (pageX, pageY) => {
-      //     puzzle.element.style.left = pageX - puzzle.element.offsetWidth + "px";
-      //     puzzle.element.style.top = pageY - puzzle.element.offsetHeight + "px";
-      //   };
-      //   moveAt(event.pageX, event.pageY);
+        let onMouseMove = (event) => {
+          moveAt(event.pageX, event.pageY);
+        };
+        document.addEventListener("mousemove", onMouseMove);
 
-      //   let onMouseMove = (event) => {
-      //     moveAt(event.pageX, event.pageY);
-      //   };
-      //   document.addEventListener("mousemove", onMouseMove);
+        puzzle.element.onmouseup = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          puzzle.element.onmouseup = null;
+        };
+      };
 
-      //   puzzle.element.onmouseup = () => {
-      //     document.removeEventListener("mousemove", onMouseMove);
-      //     puzzle.element.onmouseup = null;
-      //   };
-      // };
-      // puzzle.addEventListener("mousedown", (event) => dragMove(i, event));
+      puzzle.addEventListener("mousedown", (event) => dragMove(i, event));
     }
-
-    document.querySelector(".field").addEventListener(
-      "click",
-      () => {
-        startTimer(
-          getFromLocalStorage("minutes"),
-          getFromLocalStorage("seconds")
-        );
-      },
-      { once: true }
-    );
   };
 
   let initHelpElements = (size) => {
@@ -222,64 +161,34 @@ let game = (size, savedGameArr) => {
     );
     sizeSelectorElement.addEventListener("change", (event) => {
       setToLocalStorage("size", `${parseInt(event.target.value)}`);
-      setToLocalStorage("savedGameArr", " ");
-      deleteGame();
-      game(getFromLocalStorage("size"), getFromLocalStorage("savedGameArr"));
+      reInitGame(getFromLocalStorage("size"));
     });
     //init timer
-    if (savedGameArr.length === 1) {
-      createHtmlElement(
-        "div",
-        "timer",
-        [
-          createHtmlElement(
-            "span",
-            "minutes",
-            "00",
-            document.querySelector(".timer")
-          ),
-          createHtmlElement(
-            "span",
-            "colon",
-            ":",
-            document.querySelector(".timer")
-          ),
-          createHtmlElement(
-            "span",
-            "seconds",
-            "00",
-            document.querySelector(".timer")
-          ),
-        ],
-        document.querySelector(".header")
-      );
-    } else {
-      createHtmlElement(
-        "div",
-        "timer",
-        [
-          createHtmlElement(
-            "span",
-            "minutes",
-            `${getFromLocalStorage("minutes")}`,
-            document.querySelector(".timer")
-          ),
-          createHtmlElement(
-            "span",
-            "colon",
-            ":",
-            document.querySelector(".timer")
-          ),
-          createHtmlElement(
-            "span",
-            "seconds",
-            `${getFromLocalStorage("seconds")}`,
-            document.querySelector(".timer")
-          ),
-        ],
-        document.querySelector(".header")
-      );
-    }
+    createHtmlElement(
+      "div",
+      "timer",
+      [
+        createHtmlElement(
+          "span",
+          "minutes",
+          "00",
+          document.querySelector(".timer")
+        ),
+        createHtmlElement(
+          "span",
+          "colon",
+          ":",
+          document.querySelector(".timer")
+        ),
+        createHtmlElement(
+          "span",
+          "seconds",
+          "00",
+          document.querySelector(".timer")
+        ),
+      ],
+      document.querySelector(".header")
+    );
     //init moves
     createHtmlElement(
       "span",
@@ -295,9 +204,7 @@ let game = (size, savedGameArr) => {
       document.querySelector(".header")
     );
     newGameElement.addEventListener("click", () => {
-      deleteGame();
-      game(size, " ");
-      setToLocalStorage("savedGameArr", " ");
+      reInitGame(getFromLocalStorage("size"));
     });
     //init best games element
     let bestGamesElement = createHtmlElement(
@@ -306,109 +213,45 @@ let game = (size, savedGameArr) => {
       null,
       document.querySelector(".footer")
     );
-    bestGamesElement.addEventListener("click", () => {
-      while (document.querySelector(".modal").firstChild) {
-        document
-          .querySelector(".modal")
-          .removeChild(document.querySelector(".modal").firstChild);
-      }
-      showModal(
-        createHtmlElement(
-          "div",
-          "modal-content",
-          "Тут должна быть таблица лучших результатов"
-        )
-      );
-      setTimeout(() => {
-        document.querySelector(".modal").style.display = "none";
-      }, 1500);
-    });
-    //volume
+    let muteElement = createHtmlElement(
+      "i",
+      "fas fa-volume-mute",
+      null,
+      document.querySelector(".footer")
+    );
     let volumeElement = createHtmlElement(
       "i",
       "fas fa-volume-up",
       null,
       document.querySelector(".footer")
     );
-    volumeElement.addEventListener("click", () => {
-      if (isAudio) {
-        isAudio = false;
-        document.querySelector(".fa-volume-up").style.color = "lightslategray";
-      } else {
-        isAudio = true;
-        document.querySelector(".fa-volume-up").style.color = "black";
-      }
-    });
-    //auto asseble
     let assembleElement = createHtmlElement(
       "i",
       "fas fa-puzzle-piece",
       null,
       document.querySelector(".footer")
     );
-    assembleElement.addEventListener("click", () => {
-      while (document.querySelector(".modal").firstChild) {
-        document
-          .querySelector(".modal")
-          .removeChild(document.querySelector(".modal").firstChild);
-      }
-      showModal(
-        createHtmlElement(
-          "div",
-          "modal-content",
-          "Тут должно было быть анимированое завершение игры"
-        )
-      );
-      setTimeout(() => {
-        document.querySelector(".modal").style.display = "none";
-      }, 1500);
-    });
-    //save Game
     let saveGameElement = createHtmlElement(
       "i",
       "far fa-save",
       null,
       document.querySelector(".footer")
     );
-    saveGameElement.addEventListener("click", () => {
-      while (document.querySelector(".modal").firstChild) {
-        document
-          .querySelector(".modal")
-          .removeChild(document.querySelector(".modal").firstChild);
-      }
-      showModal(
-        createHtmlElement(
-          "div",
-          "modal-content",
-          "Игра сохранена, можете перезагружать сколько угодно"
-        )
-      );
-      setTimeout(() => {
-        document.querySelector(".modal").style.display = "none";
-      }, 1000);
-    });
-
-    //init modal
-    let modal = createHtmlElement(
-      "div",
-      "modal",
-      null,
-      document.querySelector("body")
-    );
-    window.onclick = function (event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
-      }
-    };
   };
 
+    
+  let reInitGame = (size) => {
+    deleteGame();
+    game(size);
+  };
   let deleteGame = () => {
     document.querySelector(".header").remove();
     document.querySelector(".main").remove();
     document.querySelector(".footer").remove();
-    document.querySelector(".modal").remove();
   };
-  //add background
+
+  let saveGame = () => {};
+
   (function () {
     window.addEventListener("resize", resizeThrottler, false);
     var resizeTimeout;
@@ -417,17 +260,11 @@ let game = (size, savedGameArr) => {
         resizeTimeout = setTimeout(function () {
           resizeTimeout = null;
           actualResizeHandler();
-        }, 1000);
+        }, 500);
       }
     }
     let actualResizeHandler = () => {
-      deleteGame();
-      game(
-        size,
-        getFromLocalStorage("savedGameArr")
-          .split(",")
-          .map((element) => parseInt(element))
-      );
+      reInitGame(size);
     };
   })();
 

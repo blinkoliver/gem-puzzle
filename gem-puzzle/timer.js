@@ -1,6 +1,8 @@
-let startTimer = (minut, second) => {
-  let minutes = minut;
-  let seconds = second;
+import { createHtmlElement } from "./utils.js";
+
+let startTimer = () => {
+  let minutes = "00";
+  let seconds = "00";
   let appendMinutes = document.querySelector(".minutes");
   let appendSeconds = document.querySelector(".seconds");
 
