@@ -1,2 +1,4 @@
-# blinkoliver-JS2020Q3
-Private repository for @blinkoliver
+# gem-puzzle game
+### pure js
+
+[demo](link)
