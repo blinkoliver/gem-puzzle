@@ -93,38 +93,6 @@ let game = (size) => {
       };
 
       puzzle.addEventListener("click", () => movePuzzle(i));
-
-      //drag&drop move puzzles
-      let dragMove = (index, event) => {
-        const puzzle = puzzles[index];
-        const leftDiff = Math.abs(empty.left - puzzle.left);
-        const topDiff = Math.abs(empty.top - puzzle.top);
-        puzzle.element.ondragstart = () => false;
-
-        if (leftDiff + topDiff > 1) {
-          return;
-        }
-        puzzle.element.style.position = "absolute";
-        puzzle.element.style.zIndex = 1000;
-
-        let moveAt = (pageX, pageY) => {
-          puzzle.element.style.left = pageX - puzzle.element.offsetWidth + "px";
-          puzzle.element.style.top = pageY - puzzle.element.offsetHeight + "px";
-        };
-        moveAt(event.pageX, event.pageY);
-
-        let onMouseMove = (event) => {
-          moveAt(event.pageX, event.pageY);
-        };
-        document.addEventListener("mousemove", onMouseMove);
-
-        puzzle.element.onmouseup = () => {
-          document.removeEventListener("mousemove", onMouseMove);
-          puzzle.element.onmouseup = null;
-        };
-      };
-
-      puzzle.addEventListener("mousedown", (event) => dragMove(i, event));
     }
   };
 
